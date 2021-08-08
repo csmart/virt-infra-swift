@@ -1,0 +1,25 @@
+---
+## YAML based inventory, see:
+## https://docs.ansible.com/ansible/latest/plugins/inventory/yaml.html
+#
+## Define the KVM host, it is referenced in the play by the "kvmhost" group
+## This example is localhost, but you can set whatever vars you need to here
+## The KVM host is where the networks are defined, under either "absent" or "present"
+## This allows us to clean up and remove networks you no-longer need
+kvmhost:
+  hosts:
+    localhost:
+      ansible_connection: local
+  vars:
+    virt_infra_host_networks:
+      present:
+        - name: "swift-outward"
+          type: "nat"
+          ip_address: "203.0.113.1"
+          subnet: "255.255.255.0"
+          dhcp_start: "203.0.113.100"
+          dhcp_end: "203.0.113.199"
+        - name: "swift-cluster"
+          type: "isolated"
+        - name: "swift-replication"
+          type: "isolated"

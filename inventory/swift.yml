@@ -1,0 +1,126 @@
+---
+## YAML based inventory, see:
+## https://docs.ansible.com/ansible/latest/plugins/inventory/yaml.html
+#
+swift:
+  children:
+    swift_admin:
+      hosts:
+        swift-admin:
+    swift_proxy:
+      hosts:
+        swift-[01:03]:
+    swift_account:
+      hosts:
+        swift-[01:03]:
+    swift_container:
+      hosts:
+        swift-[01:03]:
+    swift_object:
+      hosts:
+        swift-[01:03]:
+  hosts:
+    swift-admin:
+      server_ip: 10
+      virt_infra_disk_size: 40
+      virt_infra_disks:
+        - name: "boot"
+          clone: true
+    swift-01:
+      server_ip: 11
+      swift_vips:
+        - 111
+        - 112
+        - 113
+    swift-02:
+      server_ip: 12
+      swift_vips:
+        - 112
+        - 113
+        - 111
+    swift-03:
+      server_ip: 13
+      swift_vips:
+        - 113
+        - 111
+        - 112
+  vars:
+    ansible_python_interpreter: /usr/libexec/platform-python
+    ## Networks must be defined here so that each host gets it set as a var, in order to dereference ip
+    swift_outward_subnet: 203.0.113.0/24
+    swift_cluster_subnet: 192.0.2.0/24
+    swift_replication_subnet: 198.51.100.0/24
+    swift_outward_ip: "{{ swift_outward_subnet | next_nth_usable(server_ip) }}"
+    swift_cluster_ip: "{{ swift_cluster_subnet | next_nth_usable(server_ip) }}"
+    swift_replication_ip: "{{ swift_replication_subnet | next_nth_usable(server_ip) }}"
+
+    swift_rings_disks:
+      - disk:
+          device: sdb
+          rings:
+          - name: account
+            weight: 0
+          - name: container
+            weight: 0
+          - name: object
+            weight: 100
+            port: 6200
+      - disk:
+          device: nvme0n1
+          rings:
+          - name: account
+            weight: 100
+          - name: container
+            weight: 100
+          - name: object
+            weight: 0
+
+    virt_infra_autostart: no
+    virt_infra_network_config: true
+    virt_infra_cpus: 2
+    virt_infra_cpus_max: 4
+    virt_infra_ram: 2048
+    virt_infra_ram_max: 4096
+    virt_infra_variant: centos-stream8
+    virt_infra_distro_image: CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2
+    virt_infra_distro_image_url: https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2
+    virt_infra_distro_image_checksum_url: https://cloud.centos.org/centos/8-stream/x86_64/images/CHECKSUM
+    virt_infra_disk_cmd:
+      - echo 'fastestmirror=1' >> /etc/dnf/dnf.conf
+      - rm -f /etc/sysconfig/network-scripts/ifcfg-e*
+      - echo "net.ipv6.conf.all.disable_ipv6 = 1" > /etc/sysctl.d/70-ipv6.conf
+      - echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/70-ipv6.conf
+    virt_infra_networks:
+      - name: "swift-outward"
+        type: nat
+        device: eth0
+        addresses:
+          - "{{ swift_outward_ip }}/{{ swift_outward_subnet | ipaddr('prefix') }}"
+        gateway4: "{{ swift_outward_subnet | ipaddr('next_usable') }}"
+        nameservers:
+          search:
+            - swift.local
+          addresses:
+            - "{{ swift_outward_subnet | ipaddr('next_usable') }}"
+        dhcp6: false
+      - name: "swift-cluster"
+        type: nat
+        device: eth1
+        addresses:
+          - "{{ swift_cluster_ip }}/{{ swift_cluster_subnet | ipaddr('prefix') }}"
+        dhcp6: false
+      - name: "swift-replication"
+        type: nat
+        addresses:
+          - "{{ swift_replication_ip }}/{{ swift_replication_subnet | ipaddr('prefix') }}"
+        dhcp6: false
+        device: eth2
+    virt_infra_disk_size: 40
+    virt_infra_disks:
+      - name: "boot"
+        clone: true
+      - name: "data-ssd-01"
+        ssd: "true"
+      - name: "data-scsi-01"
+      - name: "data-nvme-01"
+        bus: "nvme"
