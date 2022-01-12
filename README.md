@@ -4,7 +4,10 @@
 	* [Inventory](#inventory)
 	* [Requirements](#requirements)
 		* [Supported operating systems](#supported-operating-systems)
-			* [Switching from CentOS 8 to Stream](#switching-from-centos-8-to-stream)
+			* [Deploy host](#deploy-host)
+			* [KVM host](#kvm-host)
+			* [Swift nodes](#swift-nodes)
+				* [Switching from CentOS 8 to Stream](#switching-from-centos-8-to-stream)
 		* [SELinux](#selinux)
 	* [Spin up infrastructure on KVM](#spin-up-infrastructure-on-kvm)
 		* [Destroy the virtual machines](#destroy-the-virtual-machines)
@@ -61,11 +64,37 @@ Therefore, all that's needed is a Linux box that is able to run KVM (defaults to
 
 ### Supported operating systems
 
+#### Deploy host
+
+The Ansible deploy host requires:
+
+ - Ansible >= 2.9
+ - Jinja2 >= 2.8
+ - Python netaddr
+
+---
+**NOTE**
+
+For CentOS 7, standard Python 2 packages are not sufficient as Jinja2 is 2.7, therefore it is recommended to use Python 3 packages.
+
+```bash
+sudo yum install centos-release-ansible-29
+sudo yum install ansible-python3 python36-netaddr
+```
+
+This is taken care of automatically when using the `./scripts/site.sh` wrapper script.
+
+---
+
+#### KVM host
+
 The KVM host(s) can be any major Linux distro, such as Fedora, CentOS, Debian, Ubuntu, openSUSE, etc.
 
-For the Swift cluster, only CentOS 8 Stream is currently supported.
+#### Swift nodes
 
-#### Switching from CentOS 8 to Stream
+For the Swift cluster nodes, only CentOS 8 Stream is currently supported.
+
+##### Switching from CentOS 8 to Stream
 
 If you are using existing nodes that are CentOS 8, you can switch them to Stream like so.
 
