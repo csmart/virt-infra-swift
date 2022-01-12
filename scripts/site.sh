@@ -9,8 +9,16 @@
 DIR="$(dirname "$(readlink -f "${0}")")"
 source /etc/os-release
 
+ANSIBLE_GALAXY=ansible-galaxy
+ANSIBLE_PLAYBOOK=ansible-playbook
+
+if [[ "${ID,,}" == "centos" && "${VERSION_ID}" -eq "7" ]] ; then
+	ANSIBLE_GALAXY=ansible-galaxy-3
+	ANSIBLE_PLAYBOOK=ansible-playbook-3
+fi
+
 # Check for dependencies
-if ! type ansible-playbook &>/dev/null ; then
+if ! type ${ANSIBLE_PLAYBOOK} &>/dev/null ; then
 	read -r -p "Ansible missing, install it? [y/N]: " answer
 	if [[ "${answer,,}" != "y" && "${answer,,}" != "yes" ]] ; then
 		echo "OK, please install it and retry."
@@ -19,16 +27,20 @@ if ! type ansible-playbook &>/dev/null ; then
 	case "${ID,,}" in
 		centos)
 			if [[ "${VERSION_ID}" -eq "7" ]] ; then
-				PKG_MGR=yum
+				echo sudo yum -y install epel-release centos-release-ansible-29
+				sudo yum -y install epel-release centos-release-ansible-29
+				echo sudo yum -y install ansible-python3 python36-netaddr
+				sudo yum -y install ansible-python3 python36-netaddr
+			else
+				echo sudo dnf -y install epel-release
+				sudo dnf -y install epel-release
+				echo sudo dnf -y install ansible python3-netaddr
+				sudo dnf -y install ansible python3-netaddr
 			fi
-			echo sudo ${PKG_MGR:-dnf} -y install epel-release
-			sudo ${PKG_MGR:-dnf} -y install epel-release
-			echo sudo ${PKG_MGR:-dnf} -y install ansible
-			sudo ${PKG_MGR:-dnf} -y install ansible
 			;;
 		fedora)
 			echo sudo dnf -y install ansible
-			sudo dnf -y install ansible
+			sudo dnf -y install ansible python3-netaddr
 			;;
 		debian)
 			echo "Installing Ansible from Ubuntu PPA..."
@@ -40,8 +52,8 @@ if ! type ansible-playbook &>/dev/null ; then
 			sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93C4A3FD7BB9C367
 			echo sudo apt update
 			sudo apt update
-			echo sudo apt install -y ansible
-			sudo apt install -y ansible
+			echo sudo apt install -y ansible python3-netaddr
+			sudo apt install -y ansible python3-netaddr
 			;;
 		ubuntu)
 			echo "Installing Ansible from PPA..."
@@ -49,12 +61,12 @@ if ! type ansible-playbook &>/dev/null ; then
 			sudo apt install -y software-properties-common
 			echo sudo apt-add-repository --yes --update ppa:ansible/ansible
 			sudo apt-add-repository --yes --update ppa:ansible/ansible
-			echo sudo apt install -y ansible
-			sudo apt install -y ansible
+			echo sudo apt install -y ansible python3-netaddr
+			sudo apt install -y ansible python3-netaddr
 			;;
 		opensuse|opensuse-leap)
-			echo sudo zypper install -y ansible
-			sudo zypper install -y ansible
+			echo sudo zypper install -y ansible python3-netaddr
+			sudo zypper install -y ansible python3-netaddr
 			;;
 		*)
 			echo "${ID} not supported, please install manually"
@@ -68,6 +80,6 @@ if ! type ansible-playbook &>/dev/null ; then
 	echo "Continuing with Ansible playbook!"
 fi
 
-ansible-galaxy install -r "${DIR}/../ansible/requirements.yml"
+${ANSIBLE_GALAXY} install --force -r "${DIR}/../ansible/requirements.yml"
 
-exec ansible-playbook -i "${DIR}/../inventory" "${DIR}/../ansible/site.yml" -l swift "${@}"
+exec ${ANSIBLE_PLAYBOOK} -i "${DIR}/../inventory" "${DIR}/../ansible/site.yml" -l swift "${@}"
