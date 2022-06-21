@@ -1,3 +1,4 @@
 ---
-- name: csmart.virt_infra
-- name: csmart.swift
+roles:
+  - name: csmart.virt_infra
+  - name: csmart.swift

@@ -82,9 +82,10 @@ swift:
     virt_infra_ram: 2048
     virt_infra_ram_max: 4096
     virt_infra_variant: centos-stream8
-    virt_infra_distro_image: CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2
-    virt_infra_distro_image_url: https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20210603.0.x86_64.qcow2
+    virt_infra_distro_image: CentOS-Stream-GenericCloud-8-20220125.1.x86_64.qcow2
+    virt_infra_distro_image_url: https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20220125.1.x86_64.qcow2
     virt_infra_distro_image_checksum_url: https://cloud.centos.org/centos/8-stream/x86_64/images/CHECKSUM
+    virt_infra_guest_deps: []
     virt_infra_disk_cmd:
       - echo 'fastestmirror=1' >> /etc/dnf/dnf.conf
       - rm -f /etc/sysconfig/network-scripts/ifcfg-e*
