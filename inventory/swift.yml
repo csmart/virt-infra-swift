@@ -6,7 +6,8 @@ swift:
   children:
     swift_admin:
       hosts:
-        swift-admin:
+#        swift-admin:
+        swift-01:
     swift_proxy:
       hosts:
         swift-[01:03]:
@@ -20,12 +21,12 @@ swift:
       hosts:
         swift-[01:03]:
   hosts:
-    swift-admin:
-      server_ip: 10
-      virt_infra_disk_size: 40
-      virt_infra_disks:
-        - name: "boot"
-          clone: true
+#    swift-admin:
+#      server_ip: 10
+#      virt_infra_disk_size: 40
+#      virt_infra_disks:
+#        - name: "boot"
+#          clone: true
     swift-01:
       server_ip: 11
       swift_vips:
@@ -53,27 +54,235 @@ swift:
     swift_outward_ip: "{{ swift_outward_subnet | next_nth_usable(server_ip) }}"
     swift_cluster_ip: "{{ swift_cluster_subnet | next_nth_usable(server_ip) }}"
     swift_replication_ip: "{{ swift_replication_subnet | next_nth_usable(server_ip) }}"
+    swift_account_rings_min_part_hours: 0
+    swift_container_rings_min_part_hours: 0
+    swift_object_rings_min_part_hours: 0
 
-    swift_rings_disks:
-      - disk:
-          device: sdb
-          rings:
-          - name: account
-            weight: 0
-          - name: container
-            weight: 0
-          - name: object
+    swift_account_rings:
+      account:
+        backup: true
+        min_part_hours: 0
+        part_power: 10
+        replicas: 3
+
+    swift_container_rings:
+      container:
+        backup: true
+        min_part_hours: 0
+        part_power: 10
+        replicas: 3
+
+    swift_object_rings:
+      object:
+        # ring builder vars
+        backup: true
+        create: true
+        min_part_hours: 0
+        part_power: 17
+        path: /etc/swift
+        replicas: 3
+        # swift.conf vars
+        aliases:
+          - replicas-3
+          - gold
+        default: true
+        diskfile_module: egg:swift#replication.fs
+        policy_type: replication
+      object-1:
+        # ring builder vars
+        backup: true
+        create: true
+        min_part_hours: 0
+        part_power: 17
+        path: /etc/swift
+        # For EC, replicas must equal the total of data and parity fragments
+        replicas: 7
+        # swift.conf vars
+        aliases:
+          - ec-43
+          - silver
+        policy_type: erasure_coding
+        ec_type: liberasurecode_rs_vand
+        ec_num_data_fragments: 4
+        ec_num_parity_fragments: 3
+        ec_object_segment_size: 1048576
+        diskfile_module: egg:swift#erasure_coding.fs
+
+    swift_devices:
+      0:
+        #disk: /dev/data_nvme0n1/data_nvme0n1_lv
+        disk: /dev/nvme0n1
+        ip: "{{ hostvars['swift-01'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          account:
             weight: 100
-            port: 6200
-      - disk:
-          device: nvme0n1
-          rings:
-          - name: account
+            port: "{{ swift_account_port }}"
+          container:
             weight: 100
-          - name: container
+            port: "{{ swift_container_port }}"
+      1:
+        #disk: /dev/data_nvme0n1/data_nvme0n1_lv
+        disk: /dev/nvme0n1
+        ip: "{{ hostvars['swift-02'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          account:
             weight: 100
-          - name: object
-            weight: 0
+            port: "{{ swift_account_port }}"
+          container:
+            weight: 100
+            port: "{{ swift_container_port }}"
+      2:
+        #disk: /dev/data_nvme0n1/data_nvme0n1_lv
+        disk: /dev/nvme0n1
+        ip: "{{ hostvars['swift-03'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          account:
+            weight: 100
+            port: "{{ swift_account_port }}"
+          container:
+            weight: 100
+            port: "{{ swift_container_port }}"
+      3:
+        #disk: /dev/data_sdb/data_sdb_lv
+        disk: /dev/sdb
+        ip: "{{ hostvars['swift-01'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        mount_options:
+          - nofail
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      4:
+        #disk: /dev/data_sdb/data_sdb_lv
+        disk: /dev/sdb
+        ip: "{{ hostvars['swift-02'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      5:
+        #disk: /dev/data_sdb/data_sdb_lv
+        disk: /dev/sdb
+        ip: "{{ hostvars['swift-03'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      6:
+        #disk: /dev/data_sdc/data_sdc_lv
+        disk: /dev/sdc
+        ip: "{{ hostvars['swift-01'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        mount_options:
+          - nofail
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      7:
+        #disk: /dev/data_sdc/data_sdc_lv
+        disk: /dev/sdc
+        ip: "{{ hostvars['swift-02'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      8:
+        #disk: /dev/data_sdc/data_sdc_lv
+        disk: /dev/sdc
+        ip: "{{ hostvars['swift-03'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      9:
+        #disk: /dev/data_sdd/data_sdd_lv
+        disk: /dev/sdd
+        ip: "{{ hostvars['swift-01'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        mount_options:
+          - nofail
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      10:
+        #disk: /dev/data_sdd/data_sdd_lv
+        disk: /dev/sdd
+        ip: "{{ hostvars['swift-02'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
+      11:
+        #disk: /dev/data_sdd/data_sdd_lv
+        disk: /dev/sdd
+        ip: "{{ hostvars['swift-03'].swift_cluster_ip }}"
+        region: 1
+        zone: 1
+        meta: 'meta'
+        rings:
+          object:
+            weight: 100
+            port: "{{ swift_object_port }}"
+          object-1:
+            weight: 100
+            port: "{{ swift_object_port }}"
 
     virt_infra_autostart: no
     virt_infra_network_config: true
@@ -120,8 +329,9 @@ swift:
     virt_infra_disks:
       - name: "boot"
         clone: true
-      - name: "data-ssd-01"
         ssd: "true"
+      - name: "data-scsi-03"
+      - name: "data-scsi-02"
       - name: "data-scsi-01"
       - name: "data-nvme-01"
         bus: "nvme"

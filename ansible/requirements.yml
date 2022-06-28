@@ -2,3 +2,6 @@
 roles:
   - name: csmart.virt_infra
   - name: csmart.swift
+    version: master
+    scm: git
+    src: https://github.com/csmart/ansible-role-swift.git

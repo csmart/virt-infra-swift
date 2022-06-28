@@ -80,6 +80,8 @@ if ! type ${ANSIBLE_PLAYBOOK} &>/dev/null ; then
 	echo "Continuing with Ansible playbook!"
 fi
 
-${ANSIBLE_GALAXY} install --force -r "${DIR}/../ansible/requirements.yml"
+#${ANSIBLE_GALAXY} install --force -r "${DIR}/../ansible/requirements.yml"
+#echo waiting
+#read
 
 exec ${ANSIBLE_PLAYBOOK} -i "${DIR}/../inventory" "${DIR}/../ansible/site.yml" -l swift "${@}"
