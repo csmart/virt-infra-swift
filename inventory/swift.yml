@@ -47,6 +47,8 @@ swift:
   vars:
     ansible_python_interpreter: /usr/libexec/platform-python
     ## Networks must be defined here so that each host gets it set as a var, in order to dereference ip
+    swift_custom_deps:
+      - sshpass
     swift_outward_subnet: 203.0.113.0/24
     swift_cluster_subnet: 192.0.2.0/24
     swift_replication_subnet: 198.51.100.0/24
